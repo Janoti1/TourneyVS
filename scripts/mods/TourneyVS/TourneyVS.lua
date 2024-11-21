@@ -6,11 +6,22 @@ local mod = get_mod("TourneyVS")
 
 ]]
 
+--[[
+
+░██████╗░░█████╗░██╗░░░░░
+██╔═══██╗██╔══██╗██║░░░░░
+██║██╗██║██║░░██║██║░░░░░
+╚██████╔╝██║░░██║██║░░░░░
+░╚═██╔═╝░╚█████╔╝███████╗
+░░░╚═╝░░░░╚════╝░╚══════╝
+]]
+
 --- Pause
 mod.paused = false
 mod.do_pause = function()
 	if not Managers.player.is_server then
 		mod:echo(mod:localize("not_server"))
+        mod:chat_broadcast(mod:localize("inform_host"))
 		return
 	end
 
@@ -26,6 +37,16 @@ mod.do_pause = function()
 end
 mod:command("pause", mod:localize("pause_command_description"), function() mod.do_pause() end)
 
+
+--[[
+
+░██████╗░░█████╗░███╗░░░███╗███████╗  ███╗░░░███╗░█████╗░██████╗░███████╗
+██╔════╝░██╔══██╗████╗░████║██╔════╝  ████╗░████║██╔══██╗██╔══██╗██╔════╝
+██║░░██╗░███████║██╔████╔██║█████╗░░  ██╔████╔██║██║░░██║██║░░██║█████╗░░
+██║░░╚██╗██╔══██║██║╚██╔╝██║██╔══╝░░  ██║╚██╔╝██║██║░░██║██║░░██║██╔══╝░░
+╚██████╔╝██║░░██║██║░╚═╝░██║███████╗  ██║░╚═╝░██║╚█████╔╝██████╔╝███████╗
+░╚═════╝░╚═╝░░╚═╝╚═╝░░░░░╚═╝╚══════╝  ╚═╝░░░░░╚═╝░╚════╝░╚═════╝░╚══════╝
+]]
 
 -- 15 second spawns for skaven
 GameModeSettings.versus.dark_pact_respawn_timers = {
@@ -46,7 +67,49 @@ GameModeSettings.versus.dark_pact_respawn_timers = {
         mid = 9, -- 12
     },
 }
+-- set maximum amount of wounds to 1
+GameModeSettings.versus.player_wounds = {
+    dark_pact = 1,
+    heroes = 2,
+    spectators = 0,
+}
 
+--[[
+██████╗░░█████╗░██╗░░░░░░█████╗░███╗░░██╗░█████╗░███████╗
+██╔══██╗██╔══██╗██║░░░░░██╔══██╗████╗░██║██╔══██╗██╔════╝
+██████╦╝███████║██║░░░░░███████║██╔██╗██║██║░░╚═╝█████╗░░
+██╔══██╗██╔══██║██║░░░░░██╔══██║██║╚████║██║░░██╗██╔══╝░░
+██████╦╝██║░░██║███████╗██║░░██║██║░╚███║╚█████╔╝███████╗
+╚═════╝░╚═╝░░╚═╝╚══════╝╚═╝░░╚═╝╚═╝░░╚══╝░╚════╝░╚══════╝
+]]
+
+--[[
+
+    Warrior Priest
+
+]]
+require("scripts/settings/profiles/career_constants")
+local stagger_types = require("scripts/utils/stagger_types")
+local buff_perks = require("scripts/unit_extensions/default_player_unit/buffs/settings/buff_perk_names")
+local settings = DLCSettings.bless
+DLCSettings.bless.buff_templates.victor_priest_nuke_dot.buffs.mechanism_overrides.versus = {
+    damage_profile = "victor_priest_nuke_dot_vs",
+    duration = 1.5, -- 5
+    time_between_dot_damages = 1, -- 0.7
+    update_start_delay = 1 -- 0.7
+}
+
+--[[
+
+███████╗██╗██╗░░██╗███████╗░██████╗
+██╔════╝██║╚██╗██╔╝██╔════╝██╔════╝
+█████╗░░██║░╚███╔╝░█████╗░░╚█████╗░
+██╔══╝░░██║░██╔██╗░██╔══╝░░░╚═══██╗
+██║░░░░░██║██╔╝╚██╗███████╗██████╔╝
+╚═╝░░░░░╚═╝╚═╝░░╚═╝╚══════╝╚═════╝░
+]]
+-- Crash on Game ending
+-- TODO
 
 --[[
 
