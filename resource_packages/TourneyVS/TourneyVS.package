@@ -1,0 +1,11 @@
+mod = [
+	"TourneyVS"
+]
+
+package = [
+	"resource_packages/TourneyVS/TourneyVS"
+]
+
+lua = [
+	"scripts/mods/TourneyVS/*"
+]
