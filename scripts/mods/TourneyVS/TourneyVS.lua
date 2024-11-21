@@ -49,23 +49,24 @@ mod:command("pause", mod:localize("pause_command_description"), function() mod.d
 ]]
 
 -- 15 second spawns for skaven
+GameModeSettings.versus.dark_pact_minimum_spawn_time = 0
 GameModeSettings.versus.dark_pact_respawn_timers = {
-    {
-        max = 1,
-        mid = 1,
-    },
-    {
-        max = 3,
-        mid = 3,
-    },
-    {
-        max = 10, --14
-        mid = 6, --8
-    },
-    {
-        max = 15, -- 20
-        mid = 9, -- 12
-    },
+	{
+		max = 1,
+		min = 1,
+	},
+	{
+		max = 3,
+		min = 3,
+	},
+	{
+		max = 10, -- 14
+		min = 6, -- 8
+	},
+	{
+		max = 15, -- 20
+		min = 9, -- 12
+	},
 }
 -- set maximum amount of wounds to 1
 GameModeSettings.versus.player_wounds = {
