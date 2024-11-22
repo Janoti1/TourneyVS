@@ -331,9 +331,14 @@ GameModeSettings.versus.player_wounds = {
     spectators = 0,
 }
 -- Remove loot rats from the game
-if Managers.mechanism:current_mechanism_name() == "versus" then
-    Breeds.skaven_loot_rat = Breeds.critter_pig
+mod.remove_loot_rats = function()
+    if Managers.mechanism:current_mechanism_name() == "versus" then
+        Breeds.skaven_loot_rat = Breeds.critter_pig
+    else
+        Breeds.skaven_loot_rat = Breeds.skaven_loot_rat
+    end
 end
+
 
 
 --[[
@@ -411,13 +416,20 @@ mod:add_text("markus_knight_ability_invulnerability_desc_tvs", "Valiant Charge g
 
 -- Blunderbus reduced stagger
 -- TODO
+-- https://github.com/Aussiemon/Vermintide-2-Source-Code/blob/da0bbdaf6af1ca7e8c96e7892a3416a4aa8a7f87/scripts/settings/equipment/item_master_list_carousel.lua#L414
+--blunderbuss_template_1_vs -> Weapon Template
+
 
 --[[
 
-    Remove Trollhammer from IB and Engi
+    Engineer
 
 ]]
-ItemMasterList.dr_deus_01.can_wield = {}
+-- Remove Trollhammer from IB and Engi
+ItemMasterList.vs_dr_deus_01.can_wield = {}
+
+-- remove holding multiple bombs
+CareerSettings.dr_engineer.additional_item_slots = {}
 
 --[[
 
@@ -438,7 +450,6 @@ settings.buff_templates.victor_priest_nuke_dot.buffs[1].mechanism_overrides.vers
 
 
 --[[
-
 ███████╗██╗██╗░░██╗███████╗░██████╗
 ██╔════╝██║╚██╗██╔╝██╔════╝██╔════╝
 █████╗░░██║░╚███╔╝░█████╗░░╚█████╗░
@@ -448,6 +459,13 @@ settings.buff_templates.victor_priest_nuke_dot.buffs[1].mechanism_overrides.vers
 ]]
 -- Crash on Game ending
 -- TODO
+
+
+-- TODO
+mod:on_game_state_changed()
+    mod.remove_loot_rats()
+end
+
 
 --[[
 
