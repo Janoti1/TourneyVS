@@ -23,5 +23,14 @@ return {
 	},
 	pause = {
 		en = "pause"
+	},
+	die_command_description = {
+		en = "Suizide."
+	},
+	die_cant_die = {
+		en = "[TourneyVS] You cannot die in the Keep."
+	}
+	die_die = {
+		en = "[TourneyVS] die-die yes-yes."
 	}
 }

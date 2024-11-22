@@ -6,11 +6,15 @@ local mod = get_mod("TourneyVS")
 
 ]]
 
---[[
-
-	Main Functions
-
+--[[	
+███╗░░░███╗░█████╗░██╗███╗░░██╗  ███████╗██╗░░░██╗███╗░░██╗░█████╗░████████╗██╗░█████╗░███╗░░██╗░██████╗
+████╗░████║██╔══██╗██║████╗░██║  ██╔════╝██║░░░██║████╗░██║██╔══██╗╚══██╔══╝██║██╔══██╗████╗░██║██╔════╝
+██╔████╔██║███████║██║██╔██╗██║  █████╗░░██║░░░██║██╔██╗██║██║░░╚═╝░░░██║░░░██║██║░░██║██╔██╗██║╚█████╗░
+██║╚██╔╝██║██╔══██║██║██║╚████║  ██╔══╝░░██║░░░██║██║╚████║██║░░██╗░░░██║░░░██║██║░░██║██║╚████║░╚═══██╗
+██║░╚═╝░██║██║░░██║██║██║░╚███║  ██║░░░░░╚██████╔╝██║░╚███║╚█████╔╝░░░██║░░░██║╚█████╔╝██║░╚███║██████╔╝
+╚═╝░░░░░╚═╝╚═╝░░╚═╝╚═╝╚═╝░░╚══╝  ╚═╝░░░░░░╚═════╝░╚═╝░░╚══╝░╚════╝░░░░╚═╝░░░╚═╝░╚════╝░╚═╝░░╚══╝╚═════╝░
 ]]
+
 -- Text Localization
 local _language_id = Application.user_setting("language_id")
 local _localization_database = {}
@@ -43,7 +47,6 @@ function mod.add_talent_text(self, talent_name, name, description)
     mod:add_text(talent_name, name)
     mod:add_text(talent_name .. "_desc", description)
 end
-
 
 -- Buff and Talent Functions
 local function is_local(unit)
@@ -277,6 +280,19 @@ mod.do_pause = function()
 end
 mod:command("pause", mod:localize("pause_command_description"), function() mod.do_pause() end)
 
+-- Suicide
+mod:command("die", mod:localize("die_command_description"), function()
+	if DamageUtils.is_in_inn then
+		mod:echo(mod:localize("die_cant_die"))
+		return
+	end
+
+	local player_unit = Managers.player:local_player().player_unit
+	local death_system = Managers.state.entity:system("death_system")
+	death_system:kill_unit(player_unit, {})
+	mod:echo(mod:localize("die_die"))
+end)
+
 
 --[[
 
@@ -314,6 +330,11 @@ GameModeSettings.versus.player_wounds = {
     heroes = 2,
     spectators = 0,
 }
+-- Remove loot rats from the game
+if Managers.mechanism:current_mechanism_name() == "versus" then
+    Breeds.skaven_loot_rat = Breeds.critter_pig
+end
+
 
 --[[
 ██████╗░░█████╗░██╗░░░░░░█████╗░███╗░░██╗░█████╗░███████╗
@@ -374,16 +395,29 @@ mod:modify_talent("es_knight", 5, 3, {
 })
 mod:add_text("markus_knight_guard_desc_tvs", "Kruber gains 10.0% increased power. The closest ally to Kruber gains 20.0% damage reduction and 10.0% increased power. Passive aura from Protective Presence no longer affects allies.")
 
+-- numb to pain 1 sec instead of 3
+mod:modify_talent("es_knight", 6, 1, {
+	mechanism_overrides = {
+		versus = {
+			description = "markus_knight_ability_invulnerability_desc_tvs",
+			buffs = {
+				"markus_knight_guard",
+				"markus_knight_guard_defence_tvs",
+			}
+		}
+	}
+})
+mod:add_text("markus_knight_ability_invulnerability_desc_tvs", "Valiant Charge grants invulnerability for 1 second.")
+
+-- Blunderbus reduced stagger
+-- TODO
+
 --[[
 
-	Zealot
+    Remove Trollhammer from IB and Engi
 
 ]]
--- numb to pain 1 sec instead of 3
-
-
-
-
+ItemMasterList.dr_deus_01.can_wield = {}
 
 --[[
 
