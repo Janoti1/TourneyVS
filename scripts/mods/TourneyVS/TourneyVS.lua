@@ -247,6 +247,8 @@ function mod.add_explosion_template(self, explosion_name, data)
     NetworkLookup.explosion_templates[explosion_name] = index
 end
 
+-- Damage Profile Templates
+NewDamageProfileTemplates = NewDamageProfileTemplates or {}
 
 
 --[[
@@ -415,10 +417,89 @@ mod:modify_talent("es_knight", 6, 1, {
 mod:add_text("markus_knight_ability_invulnerability_desc_tvs", "Valiant Charge grants invulnerability for 1 second.")
 
 -- Blunderbus reduced stagger
--- TODO
 -- https://github.com/Aussiemon/Vermintide-2-Source-Code/blob/da0bbdaf6af1ca7e8c96e7892a3416a4aa8a7f87/scripts/settings/equipment/item_master_list_carousel.lua#L414
 --blunderbuss_template_1_vs -> Weapon Template
-
+--AttackTemplates.shot_shotgun_vs.ranged_stagger = false --true
+--AttackTemplates.shot_shotgun_vs.stagger_value = 1 --2
+NewDamageProfileTemplate.shot_shotgun_vs_tvs = {
+    charge_value = "instant_projectile",
+		no_stagger_damage_reduction_ranged = true,
+		shield_break = true,
+		critical_strike = {
+			attack_armor_power_modifer = {
+				1,
+				0.3,
+				0.5,
+				1,
+				1,
+				0,
+			},
+			impact_armor_power_modifer = {
+				1,
+				1,
+				1,
+				1,
+				1,
+				0.5,
+			},
+		},
+		armor_modifier_near = {
+			attack = {
+				1,
+				0.4,
+				0.4,
+				0.75,
+				1,
+				0,
+			},
+			impact = {
+				1,
+				1,
+				3,
+				0,
+				1,
+				0.75,
+			},
+		},
+		armor_modifier_far = {
+			attack = {
+				1,
+				0.2,
+				0.25,
+				0.75,
+				1,
+				0,
+			},
+			impact = {
+				1,
+				0.7,
+				0.5,
+				0,
+				1,
+				0.5,
+			},
+		},
+		cleave_distribution = {
+			attack = 0.1,
+			impact = 0.1,
+		},
+		default_target = {
+			attack_template = "shot_shotgun_vs",
+			boost_curve_coefficient = 0.75,
+			boost_curve_coefficient_headshot = 0.75,
+			boost_curve_type = "linesman_curve",
+			power_distribution_near = {
+				attack = 0.1, --0.25,
+				impact = 0.1, --0.3,
+			},
+			power_distribution_far = {
+				attack = 0.1, --0.15,
+				impact = 0.1, --0.15,
+			},
+			range_modifier_settings = drop_off_ranges.blunderbuss_dropoff_ranges,
+		}
+}
+Weapons.blunderbuss_template_1_vs.actions.action_one.default.damage_profile = "shot_shotgun_vs_tvs"
 
 --[[
 
@@ -461,10 +542,186 @@ settings.buff_templates.victor_priest_nuke_dot.buffs[1].mechanism_overrides.vers
 -- TODO
 
 
--- TODO
-mod:on_game_state_changed()
-    mod.remove_loot_rats()
+mod.on_game_state_changed = function(status, state_name)
+	if status == "enter" and state_name == "StateIngame" then
+        mod.remove_loot_rats()
+	end
 end
+
+
+
+
+
+-- New Damage Profile Templates
+--Add the new templates to the DamageProfile templates
+--Setup proper linkin in NetworkLookup
+for key, _ in pairs(NewDamageProfileTemplates) do
+    i = #NetworkLookup.damage_profiles + 1
+    NetworkLookup.damage_profiles[i] = key
+    NetworkLookup.damage_profiles[key] = i
+end
+--Merge the tables together
+table.merge_recursive(DamageProfileTemplates, NewDamageProfileTemplates)
+--Do FS things
+for name, damage_profile in pairs(DamageProfileTemplates) do
+	if not damage_profile.targets then
+		damage_profile.targets = {}
+	end
+
+	fassert(damage_profile.default_target, "damage profile [\"%s\"] missing default_target", name)
+
+	if type(damage_profile.critical_strike) == "string" then
+		local template = PowerLevelTemplates[damage_profile.critical_strike]
+
+		fassert(template, "damage profile [\"%s\"] has no corresponding template defined in PowerLevelTemplates. Wanted template name is [\"%s\"] ", name, damage_profile.critical_strike)
+
+		damage_profile.critical_strike = template
+	end
+
+	if type(damage_profile.cleave_distribution) == "string" then
+		local template = PowerLevelTemplates[damage_profile.cleave_distribution]
+
+		fassert(template, "damage profile [\"%s\"] has no corresponding template defined in PowerLevelTemplates. Wanted template name is [\"%s\"] ", name, damage_profile.cleave_distribution)
+
+		damage_profile.cleave_distribution = template
+	end
+
+	if type(damage_profile.armor_modifier) == "string" then
+		local template = PowerLevelTemplates[damage_profile.armor_modifier]
+
+		fassert(template, "damage profile [\"%s\"] has no corresponding template defined in PowerLevelTemplates. Wanted template name is [\"%s\"] ", name, damage_profile.armor_modifier)
+
+		damage_profile.armor_modifier = template
+	end
+
+	if type(damage_profile.default_target) == "string" then
+		local template = PowerLevelTemplates[damage_profile.default_target]
+
+		fassert(template, "damage profile [\"%s\"] has no corresponding template defined in PowerLevelTemplates. Wanted template name is [\"%s\"] ", name, damage_profile.default_target)
+
+		damage_profile.default_target = template
+	end
+
+	if type(damage_profile.targets) == "string" then
+		local template = PowerLevelTemplates[damage_profile.targets]
+
+		fassert(template, "damage profile [\"%s\"] has no corresponding template defined in PowerLevelTemplates. Wanted template name is [\"%s\"] ", name, damage_profile.targets)
+
+		damage_profile.targets = template
+	end
+end
+
+local no_damage_templates = {}
+for name, damage_profile in pairs(DamageProfileTemplates) do
+	local no_damage_name = name .. "_no_damage"
+
+	if not DamageProfileTemplates[no_damage_name] then
+		local no_damage_template = table.clone(damage_profile)
+
+		if no_damage_template.targets then
+			for _, target in ipairs(no_damage_template.targets) do
+				if target.power_distribution then
+					target.power_distribution.attack = 0
+				end
+			end
+		end
+
+		if no_damage_template.default_target.power_distribution then
+			no_damage_template.default_target.power_distribution.attack = 0
+		end
+
+		no_damage_templates[no_damage_name] = no_damage_template
+	end
+end
+
+DamageProfileTemplates = table.merge(DamageProfileTemplates, no_damage_templates)
+
+local MeleeBuffTypes = MeleeBuffTypes or {
+	MELEE_1H = true,
+	MELEE_2H = true
+}
+local RangedBuffTypes = RangedBuffTypes or {
+	RANGED_ABILITY = true,
+	RANGED = true
+}
+local WEAPON_DAMAGE_UNIT_LENGTH_EXTENT = 1.919366
+local TAP_ATTACK_BASE_RANGE_OFFSET = 0.6
+local HOLD_ATTACK_BASE_RANGE_OFFSET = 0.65
+
+for item_template_name, item_template in pairs(Weapons) do
+	item_template.name = item_template_name
+	item_template.crosshair_style = item_template.crosshair_style or "dot"
+	local attack_meta_data = item_template.attack_meta_data
+	local tap_attack_meta_data = attack_meta_data and attack_meta_data.tap_attack
+	local hold_attack_meta_data = attack_meta_data and attack_meta_data.hold_attack
+	local set_default_tap_attack_range = tap_attack_meta_data and tap_attack_meta_data.max_range == nil
+	local set_default_hold_attack_range = hold_attack_meta_data and hold_attack_meta_data.max_range == nil
+
+	if RangedBuffTypes[item_template.buff_type] and attack_meta_data then
+		attack_meta_data.effective_against = attack_meta_data.effective_against or 0
+		attack_meta_data.effective_against_charged = attack_meta_data.effective_against_charged or 0
+		attack_meta_data.effective_against_combined = bit.bor(attack_meta_data.effective_against, attack_meta_data.effective_against_charged)
+	end
+
+	if MeleeBuffTypes[item_template.buff_type] then
+		fassert(attack_meta_data, "Missing attack metadata for weapon %s", item_template_name)
+		fassert(tap_attack_meta_data, "Missing tap_attack metadata for weapon %s", item_template_name)
+		fassert(hold_attack_meta_data, "Missing hold_attack metadata for weapon %s", item_template_name)
+		fassert(tap_attack_meta_data.arc, "Missing arc parameter in tap_attack metadata for weapon %s", item_template_name)
+		fassert(hold_attack_meta_data.arc, "Missing arc parameter in hold_attack metadata for weapon %s", item_template_name)
+	end
+
+	local actions = item_template.actions
+
+	for action_name, sub_actions in pairs(actions) do
+		for sub_action_name, sub_action_data in pairs(sub_actions) do
+			local lookup_data = {
+				item_template_name = item_template_name,
+				action_name = action_name,
+				sub_action_name = sub_action_name
+			}
+			sub_action_data.lookup_data = lookup_data
+			local action_kind = sub_action_data.kind
+			local action_assert_func = ActionAssertFuncs[action_kind]
+
+			if action_assert_func then
+				action_assert_func(item_template_name, action_name, sub_action_name, sub_action_data)
+			end
+
+			if action_name == "action_one" then
+				local range_mod = sub_action_data.range_mod or 1
+
+				if set_default_tap_attack_range and string.find(sub_action_name, "light_attack") then
+					local current_attack_range = tap_attack_meta_data.max_range or math.huge
+					local tap_attack_range = TAP_ATTACK_BASE_RANGE_OFFSET + WEAPON_DAMAGE_UNIT_LENGTH_EXTENT * range_mod
+					tap_attack_meta_data.max_range = math.min(current_attack_range, tap_attack_range)
+				elseif set_default_hold_attack_range and string.find(sub_action_name, "heavy_attack") then
+					local current_attack_range = hold_attack_meta_data.max_range or math.huge
+					local hold_attack_range = HOLD_ATTACK_BASE_RANGE_OFFSET + WEAPON_DAMAGE_UNIT_LENGTH_EXTENT * range_mod
+					hold_attack_meta_data.max_range = math.min(current_attack_range, hold_attack_range)
+				end
+			end
+
+			local impact_data = sub_action_data.impact_data
+
+			if impact_data then
+				local pickup_settings = impact_data.pickup_settings
+
+				if pickup_settings then
+					local link_hit_zones = pickup_settings.link_hit_zones
+
+					if link_hit_zones then
+						for i = 1, #link_hit_zones, 1 do
+							local hit_zone_name = link_hit_zones[i]
+							link_hit_zones[hit_zone_name] = true
+						end
+					end
+				end
+			end
+		end
+	end
+end
+
 
 
 --[[
