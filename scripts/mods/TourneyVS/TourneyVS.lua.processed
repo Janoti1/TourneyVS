@@ -252,6 +252,7 @@ NewDamageProfileTemplates = NewDamageProfileTemplates or {}
 
 
 --[[
+
 ░██████╗░░█████╗░██╗░░░░░
 ██╔═══██╗██╔══██╗██║░░░░░
 ██║██╗██║██║░░██║██║░░░░░
@@ -284,20 +285,13 @@ mod:command("pause", mod:localize("pause_command_description"), function() mod.d
 -- Suicide
 -- Cooldown?
 mod:command("die", mod:localize("die_command_description"), function()
-	-- check if you are in the keep
 	if DamageUtils.is_in_inn then
 		mod:echo(mod:localize("die_cant_die"))
 		return
 	end
 
-	-- check if you are a player
-	local peer_id = Network.peer_id()
-	local party_id = Managers.mechanism:reserved_party_id_by_peer(peer_id)
-	local party_manager = Managers.party
-	local party = party_manager:get_party(party_id)
-	local side = Managers.state.side.side_by_party[party]
-	local is_dark_pact = side and side:name() == "dark_pact"
-	if not is_dark_pact then
+	local party_id = Managers.party:get_party()
+	if party_id == 1 then
 		mod:echo(mod:localize("die_cant_die_player"))
 		return
 	end
@@ -308,12 +302,13 @@ mod:command("die", mod:localize("die_command_description"), function()
 	mod:echo(mod:localize("die_die"))
 end)
 
+
 -- picking characters speed reduced
 GameModeSettings.versus.character_picking_settings = {
     closing_time = 2,
     parading_duration = 5,
     player_pick_time = 5,
-    startup_time = 3,
+    startup_time = 5,
 }
 -- start game duration lowered
 GameModeSettings.versus.pre_start_round_duration = 15
@@ -321,6 +316,7 @@ GameModeSettings.versus.initial_set_pre_start_duration = 20
 
 
 --[[
+
 ░██████╗░░█████╗░███╗░░░███╗███████╗  ███╗░░░███╗░█████╗░██████╗░███████╗
 ██╔════╝░██╔══██╗████╗░████║██╔════╝  ████╗░████║██╔══██╗██╔══██╗██╔════╝
 ██║░░██╗░███████║██╔████╔██║█████╗░░  ██╔████╔██║██║░░██║██║░░██║█████╗░░
@@ -356,12 +352,11 @@ GameModeSettings.versus.player_wounds = {
     spectators = 0,
 }
 -- Remove loot rats from the game
-mod.loot_rats_backup = Breeds.skaven_loot_rat
 mod.remove_loot_rats = function()
     if Managers.mechanism:current_mechanism_name() == "versus" then
         Breeds.skaven_loot_rat = Breeds.critter_pig
     else
-        Breeds.skaven_loot_rat = mod.loot_rats_backup
+        Breeds.skaven_loot_rat = Breeds.skaven_loot_rat
     end
 end
 
@@ -393,58 +388,60 @@ settings.team_size_difference_recharge_modifier = {
 
 ]]
 
--- comrades 50% dr changed to 20% dr (overriding adventure)
-mod:modify_talent_buff_template("empire_soldier", "markus_knight_guard_defence_buff", {
-    mechanism_overrides = {
-		versus = {
-			multiplier = -0.2,
-		}
-	}
-})
-mod:modify_talent("es_knight", 4, 3, {
+-- comrades 50% dr changed to 20% dr
+--[[mod:add_talent_buff_template("empire_soldier", "markus_knight_guard_defence_tvs", {
+    multiplier = -0.2,
+    remove_buff_func = "remove_aura_buff",
+    stat_buff = "damage_taken",
+    update_func = "activate_buff_on_closest_distance",
+    range = 5,
+}]]
+--[[
+mod:modify_talent("es_knight", 5, 3, {
 	mechanism_overrides = {
 		versus = {
-			description_values = {
+			description = "markus_knight_guard_desc_tvs",
+			--[[buffs = {
+				"markus_knight_guard",
+				"markus_knight_guard_defence_tvs",
+			}]]
+		}
+	}
+})]]
+--TalentBuffTemplates.empire_soldier.markus_knight_guard_defence_buff.buffs[1].multiplier = -0.2
+mod:add_text("markus_knight_guard_desc_tvs", "Kruber gains 10.0% increased power. The closest ally to Kruber gains 20.0% damage reduction and 10.0% increased power. Passive aura from Protective Presence no longer affects allies.")
+
+mod:modify_talent("es_knight", 5, 3, {
+	mechanism_overrides = {
+		versus = {
+			description = "markus_knight_ability_invulnerability_desc_tvs",
+			--[[buffs = {
 				{
-					value_type = "percent",
-					value = 0.1
-				},
-				{
-					value_type = "percent",
-					value = 0.2
-				},
-				{
-					value_type = "percent",
-					value = 0.1
+					duration = 1
 				}
-			},
+			}]]
 		}
 	}
 })
 
 -- numb to pain 1 sec instead of 3
-mod:modify_talent_buff_template("empire_soldier", "markus_knight_ability_invulnerability_buff", {
-    mechanism_overrides = {
-		versus = {
-			duration = 1,
-		}
-	}
-})
 mod:modify_talent("es_knight", 6, 1, {
 	mechanism_overrides = {
 		versus = {
-			description_values = {
+			description = "markus_knight_ability_invulnerability_desc_tvs",
+			--[[buffs = {
 				{
-					value = 1
+					duration = 1
 				}
-			},
+			}]]
 		}
 	}
 })
+--TalentBuffTemplates.empire_soldier.markus_knight_ability_invulnerability_buff.buffs[1].duration = 1
+mod:add_text("markus_knight_ability_invulnerability_desc_tvs", "Valiant Charge grants invulnerability for 1 second.")
 
--- Blunderbus reduced stagger and damage a lot
--- increase damage against monster a little
-NewDamageProfileTemplates.shot_shotgun_blunderbuss_vs_tvs = {
+-- Blunderbus reduced stagger
+NewDamageProfileTemplates.shot_shotgun_vs_tvs = {
     charge_value = "instant_projectile",
 		no_stagger_damage_reduction_ranged = true,
 		shield_break = true,
@@ -468,9 +465,9 @@ NewDamageProfileTemplates.shot_shotgun_blunderbuss_vs_tvs = {
 		},
 		armor_modifier_near = {
 			attack = {
-				0.8, --1
+				1,
 				0.4,
-				1, --0.4,
+				0.4,
 				0.75,
 				1,
 				0,
@@ -486,9 +483,9 @@ NewDamageProfileTemplates.shot_shotgun_blunderbuss_vs_tvs = {
 		},
 		armor_modifier_far = {
 			attack = {
-				0.8, --1
+				1,
 				0.2,
-				0.4, --0.25,
+				0.25,
 				0.75,
 				1,
 				0,
@@ -516,7 +513,7 @@ NewDamageProfileTemplates.shot_shotgun_blunderbuss_vs_tvs = {
 				impact = 0.1, --0.3,
 			},
 			power_distribution_far = {
-				attack = 0.09, --0.15,
+				attack = 0.1, --0.15,
 				impact = 0.1, --0.15,
 			},
 			range_modifier_settings = {
@@ -525,99 +522,7 @@ NewDamageProfileTemplates.shot_shotgun_blunderbuss_vs_tvs = {
 			},
 		}
 }
-Weapons.blunderbuss_template_1_vs.actions.action_one.default.damage_profile = "shot_shotgun_blunderbuss_vs_tvs"
-
---[[
-
-	Ranger Veteran
-
-]]
--- Grudgeraker reduce stagger and damage a little
--- reduced overall damage
--- increased monster and armor damage slightly for better bp against hook and gunners
-NewDamageProfileTemplates.shot_shotgun_grudgeraker_vs_tvs = {
-    charge_value = "instant_projectile",
-		no_stagger_damage_reduction_ranged = true,
-		shield_break = true,
-		critical_strike = {
-			attack_armor_power_modifer = {
-				1,
-				0.3,
-				0.5,
-				1,
-				1,
-				0,
-			},
-			impact_armor_power_modifer = {
-				1,
-				1,
-				1,
-				1,
-				1,
-				0.5,
-			},
-		},
-		armor_modifier_near = {
-			attack = {
-				1,
-				0.2, --0.4
-				0.6, --0.4,
-				0.75,
-				1,
-				0,
-			},
-			impact = {
-				1,
-				1,
-				3,
-				0,
-				1,
-				0.75,
-			},
-		},
-		armor_modifier_far = {
-			attack = {
-				1,
-				0.15, --0.2
-				0.4, --0.25
-				0.75,
-				1,
-				0,
-			},
-			impact = {
-				1,
-				0.7,
-				0.5,
-				0,
-				1,
-				0.5,
-			},
-		},
-		cleave_distribution = {
-			attack = 0.1,
-			impact = 0.1,
-		},
-		default_target = {
-			attack_template = "shot_shotgun_vs",
-			boost_curve_coefficient = 0.75,
-			boost_curve_coefficient_headshot = 0.75,
-			boost_curve_type = "linesman_curve",
-			power_distribution_near = {
-				attack = 0.15, --0.25,
-				impact = 0.1, --0.3,
-			},
-			power_distribution_far = {
-				attack = 0.12, --0.15,
-				impact = 0.1, --0.15,
-			},
-			range_modifier_settings = {
-				dropoff_end = 20,
-				dropoff_start = 8,
-			},
-		}
-}
-Weapons.grudge_raker_template_1_vs.actions.action_one.default.damage_profile = "shot_shotgun_grudgeraker_vs_tvs"
-
+Weapons.blunderbuss_template_1_vs.actions.action_one.default.damage_profile = "shot_shotgun_vs_tvs"
 
 --[[
 
@@ -636,14 +541,16 @@ CareerSettings.dr_engineer.additional_item_slots = {}
 
 ]]
 -- reduce the damage of WP bubble
--- reduced it by 66% against monsters
-DLCSettings.bless.buff_templates.victor_priest_nuke_dot.buffs[1].mechanism_overrides.versus = {
+require("scripts/settings/profiles/career_constants")
+local stagger_types = require("scripts/utils/stagger_types")
+local buff_perks = require("scripts/unit_extensions/default_player_unit/buffs/settings/buff_perk_names")
+local settings = DLCSettings.bless
+settings.buff_templates.victor_priest_nuke_dot.buffs[1].mechanism_overrides.versus = {
     damage_profile = "victor_priest_nuke_dot_vs",
     duration = 1.5, -- 5
     time_between_dot_damages = 1, -- 0.7
     update_start_delay = 1 -- 0.7
 }
-DamageProfileTemplates.victor_priest_nuke_dot_vs.armor_modifier.attack[3] = 1.0
 
 
 --[[
@@ -842,24 +749,11 @@ end
 
 --[[
 
-	local peer_id = Network.peer_id()
-	local party_id = Managers.mechanism:reserved_party_id_by_peer(peer_id)
-	local party_manager = Managers.party
-	local party = party_manager:get_party(party_id)
-	local side = Managers.state.side.side_by_party[party]
-	local is_dark_pact = side and side:name() == "dark_pact"
-
-	mod:echo("Dark Pact: " .. tostring(is_dark_pact))
+    Notes:
 
 
-GUID: 968afaab-1ae9-4483-8f8e-2a36bbf28807
-Log File: 
-Info Type: 
------------------------------------------------
-[Script Error]: ...ts/ui/views/level_end/states/end_view_state_score_vs.lua:115: attempt to index field 'rewards' (a nil value)
------------------------------------------------
-[Crash Link]:
-crashify://968afaab-1ae9-4483-8f8e-2a36bbf28807
+    damage profile templates vs https://github.com/Aussiemon/Vermintide-2-Source-Code/blob/da0bbdaf6af1ca7e8c96e7892a3416a4aa8a7f87/scripts/settings/equipment/damage_profile_templates_dlc_vs.lua#L837
+    attack templates vs https://github.com/Aussiemon/Vermintide-2-Source-Code/blob/da0bbdaf6af1ca7e8c96e7892a3416a4aa8a7f87/scripts/settings/equipment/attack_templates_dlc_vs.lua
 
 ]]
 
