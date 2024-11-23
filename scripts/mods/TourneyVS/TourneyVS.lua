@@ -310,8 +310,8 @@ end)
 
 -- picking characters speed reduced
 GameModeSettings.versus.character_picking_settings = {
-    closing_time = 2,
-    parading_duration = 5,
+    closing_time = 1,
+    parading_duration = 1,
     player_pick_time = 5,
     startup_time = 3,
 }
@@ -655,7 +655,20 @@ DamageProfileTemplates.victor_priest_nuke_dot_vs.armor_modifier.attack[3] = 1.0
 ╚═╝░░░░░╚═╝╚═╝░░╚═╝╚══════╝╚═════╝░
 ]]
 -- Crash on Game ending
--- TODO
+--[[
+mod:hook(EndViewStateScoreVS, "create_ui_elements", function (self, params)
+
+	local state, reason, cause, violation = EAC.state()
+	if state == "untrusted" or state == "banned" then
+		Managers.state.game_mode:start_specific_level("carousel_hub")
+	end
+
+end)
+mod:hook(LevelEndViewVersus, "setup_pages", function (self, game_won, rewards)
+	mod:echo("Setting up untrusted state.")
+	local index_by_state_name = LevelEndViewVersus:_setup_pages_untrusted()
+	return index_by_state_name
+end)]]
 
 
 mod.on_game_state_changed = function(status, state_name)
@@ -851,6 +864,9 @@ end
 
 	mod:echo("Dark Pact: " .. tostring(is_dark_pact))
 
+	local mod = get_mod("TourneyVS")
+	local trust = LevelEndViewVersus._is_untrusted
+	mod:echo("Trust status: " .. tostring(trust))
 
 GUID: 968afaab-1ae9-4483-8f8e-2a36bbf28807
 Log File: 
