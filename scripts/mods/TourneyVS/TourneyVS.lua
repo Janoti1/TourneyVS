@@ -319,6 +319,11 @@ GameModeSettings.versus.character_picking_settings = {
 GameModeSettings.versus.pre_start_round_duration = 15
 GameModeSettings.versus.initial_set_pre_start_duration = 20
 
+-- Auto Screenshot on end of game
+--[[mod:command("screenshot", "screenshot_test", function()
+	Application.save_render_target("back_buffer", "C:/Users")
+end)]]
+
 
 --[[
 ░██████╗░░█████╗░███╗░░░███╗███████╗  ███╗░░░███╗░█████╗░██████╗░███████╗
@@ -443,7 +448,7 @@ mod:modify_talent("es_knight", 6, 1, {
 })
 
 -- Blunderbus reduced stagger and damage a lot
--- increase damage against monster a little
+-- increase damage against monster a little, reduce damage against infantry a little
 NewDamageProfileTemplates.shot_shotgun_blunderbuss_vs_tvs = {
     charge_value = "instant_projectile",
 		no_stagger_damage_reduction_ranged = true,
@@ -534,7 +539,7 @@ Weapons.blunderbuss_template_1_vs.actions.action_one.default.damage_profile = "s
 ]]
 -- Grudgeraker reduce stagger and damage a little
 -- reduced overall damage
--- increased monster and armor damage slightly for better bp against hook and gunners
+-- decreased monster and armor damage slightly for because of breakpoints against hooks and gunners
 NewDamageProfileTemplates.shot_shotgun_grudgeraker_vs_tvs = {
     charge_value = "instant_projectile",
 		no_stagger_damage_reduction_ranged = true,

@@ -1,19 +1,23 @@
+local mod = get_mod("TourneyVS")
 return {
+	mod_name = {
+		en = "Tourney Versus"
+	},
 	mod_description = {
-		en = "TourneyVS tries to adjust Versus mode to a degree that the community can hold tournaments."
+		en = "Tourney Versus tries to adjust Versus mode to a degree that the community can hold tournaments."
 			..	"\nAny changes can be found in the mods description and its documentation."
 	},
 	not_server = {
-		en = "[TourneyVS] You need to be host to pause!",
+		en = "[Tourney Versus] You need to be host to pause!",
 	},
 	inform_host = {
-		en = "[TourneyVS] A PLAYER NEEDS TO PAUSE!"
+		en = "[Tourney Versus] A PLAYER NEEDS TO PAUSE!"
 	},
 	game_unpaused = {
-		en = "[TourneyVS] Game unpaused!",
+		en = "[Tourney Versus] Game unpaused!",
 	},
 	game_paused = {
-		en = "[TourneyVS] Game paused!",
+		en = "[Tourney Versus] Game paused!",
 	},
 	pause_command_description = {
 		en = " Pause the game.",
@@ -28,12 +32,12 @@ return {
 		en = " Suicide."
 	},
 	die_cant_die = {
-		en = "[TourneyVS] You cannot suicide in the Keep."
+		en = "[Tourney Versus] You cannot suicide in the Keep."
 	},
 	die_cant_die_player = {
-		en = "[TourneyVS] You cannot suicide as a hero."
+		en = "[Tourney Versus] You cannot suicide as a hero."
 	},
 	die_die = {
-		en = "[TourneyVS] die-die yes-yes."
+		en = "[Tourney Versus] die-die yes-yes."
 	},
 }
