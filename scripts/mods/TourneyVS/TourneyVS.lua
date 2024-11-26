@@ -655,6 +655,100 @@ DamageProfileTemplates.victor_priest_nuke_dot_vs.armor_modifier.attack[3] = 1.0
 ╚═╝░░░░░╚═╝╚═╝░░╚═╝╚══════╝╚═════╝░
 ]]
 -- Crash on Game ending
+-- attempt of fixing it without a FS hotfix by Aledend
+mod:hook(StateInGameRunning, "_setup_end_of_level_UI ", function(self)
+
+	if script_data.disable_end_screens then
+		Managers.state.network.network_transmit:send_rpc_server("rpc_is_ready_for_transition")
+	elseif not Managers.state.game_mode:setting("skip_level_end_view") then
+		local game_won = not self.game_lost and not self.game_tied
+		local game_mode_key = Managers.state.game_mode:game_mode_key()
+		local mechanism_name = Managers.mechanism:current_mechanism_name()
+		local is_versus = mechanism_name == "versus"
+		local hero_name
+		local peer_id = Network.peer_id()
+		local profile_index = self.profile_synchronizer:get_persistent_profile_index_reservation(peer_id)
+
+		if profile_index and profile_index ~= 0 then
+			local profile = SPProfiles[profile_index]
+
+			hero_name = profile.display_name
+		end
+
+		local level_end_view_context = {}
+
+		level_end_view_context.world_manager = Managers.world
+		level_end_view_context.is_server = self.is_server
+		level_end_view_context.is_quickplay = self.is_quickplay
+		level_end_view_context.peer_id = peer_id
+		level_end_view_context.local_player_hero_name = hero_name
+		level_end_view_context.game_won = game_won
+		level_end_view_context.game_mode_key = game_mode_key
+		level_end_view_context.difficulty = Managers.state.difficulty:get_difficulty()
+		level_end_view_context.level_key = Managers.state.game_mode:level_key()
+		level_end_view_context.weave_personal_best_achieved = self._weave_personal_best_achieved
+		level_end_view_context.completed_weave = self._completed_weave
+		level_end_view_context.profile_synchronizer = self.profile_synchronizer
+		level_end_view_context.challenge_progression_status = {
+			start_progress = Managers.mechanism:get_stored_challenge_progression_status(),
+			end_progress = Managers.mechanism:get_challenge_progression_status()
+		}
+
+		if is_versus then
+			level_end_view_context.party_composition = Managers.party:get_party_composition()
+		end
+
+		if self.is_server then
+			local players_session_score = Managers.mechanism:get_players_session_score(self.statistics_db, self.profile_synchronizer, self._saved_scoreboard_stats)
+
+			Managers.mechanism:sync_players_session_score(players_session_score)
+
+			level_end_view_context.players_session_score = players_session_score
+		end
+
+		self._weave_personal_best_achieved = nil
+		self._completed_weave = nil
+
+		--[[if not self._booted_eac_untrusted then
+			local level, start_experience, start_experience_pool = self.rewards:get_level_start()
+			local versus_level, versus_start_experience = self.rewards:get_versus_level_start()
+			local win_track_start_experience = self.rewards:get_win_track_experience_start()
+			local rewards, end_of_level_rewards_arguments = self.rewards:get_rewards()
+			local win_conditions = mechanism_name == "versus" and Managers.mechanism:game_mechanism():win_conditions()
+
+			level_end_view_context.rewards = {
+				end_of_level_rewards = rewards and table.clone(rewards) or {},
+				level_start = {
+					level,
+					start_experience,
+					start_experience_pool
+				},
+				versus_level_start = {
+					versus_level,
+					versus_start_experience
+				},
+				mission_results = table.clone(self.rewards:get_mission_results()),
+				win_track_start_experience = win_track_start_experience,
+				team_scores = win_conditions and win_conditions:get_total_scores()
+			}
+			level_end_view_context.end_of_level_rewards_arguments = end_of_level_rewards_arguments and table.clone(end_of_level_rewards_arguments) or {}
+		end]]
+
+		level_end_view_context.level_end_view = Managers.mechanism:get_level_end_view()
+		self.parent.parent.loading_context.level_end_view_context = level_end_view_context
+
+		if IS_PS4 then
+			Managers.account:set_presence("dice_game")
+		end
+
+		if Managers.chat:chat_is_focused() then
+			Managers.chat.chat_gui:block_input()
+		end
+	end
+
+	self.has_setup_end_of_level = true
+
+end)
 --[[
 mod:hook(EndViewStateScoreVS, "create_ui_elements", function (self, params)
 
@@ -669,6 +763,8 @@ mod:hook(LevelEndViewVersus, "setup_pages", function (self, game_won, rewards)
 	local index_by_state_name = LevelEndViewVersus:_setup_pages_untrusted()
 	return index_by_state_name
 end)]]
+
+
 
 
 mod.on_game_state_changed = function(status, state_name)
