@@ -323,6 +323,15 @@ GameModeSettings.versus.initial_set_pre_start_duration = 20
 --[[mod:command("screenshot", "screenshot_test", function()
 	Application.save_render_target("back_buffer", "C:/Users")
 end)]]
+mod:command("screenshot", "screenshot_test", function()
+	local key = "key" --self._current_item_key:gsub("/", "-")
+	local user_dir = os.getenv("USERPROFILE")
+	local color = "color" --self._color_index % 2 == 0 and "white" or "black"
+	--local path = string.format("%s\\Desktop\\images\\%s_%s.dds", user_dir, key, color)
+	--local path = "D:\\Users\\janot\\Desktop\\images\\screenshot.dds"
+	mod:echo("path: " .. path)
+	Application.save_render_target("ssao_buffer", "path.dds") --back_buffer, linear_depth, 
+end)
 
 
 --[[
@@ -661,8 +670,7 @@ DamageProfileTemplates.victor_priest_nuke_dot_vs.armor_modifier.attack[3] = 1.0
 ]]
 -- Crash on Game ending
 -- attempt of fixing it without a FS hotfix by Aledend
-mod:hook(StateInGameRunning, "_setup_end_of_level_UI ", function(self)
-
+StateInGameRunning._setup_end_of_level_UI = function (self)
 	if script_data.disable_end_screens then
 		Managers.state.network.network_transmit:send_rpc_server("rpc_is_ready_for_transition")
 	elseif not Managers.state.game_mode:setting("skip_level_end_view") then
@@ -696,7 +704,7 @@ mod:hook(StateInGameRunning, "_setup_end_of_level_UI ", function(self)
 		level_end_view_context.profile_synchronizer = self.profile_synchronizer
 		level_end_view_context.challenge_progression_status = {
 			start_progress = Managers.mechanism:get_stored_challenge_progression_status(),
-			end_progress = Managers.mechanism:get_challenge_progression_status()
+			end_progress = Managers.mechanism:get_challenge_progression_status(),
 		}
 
 		if is_versus then
@@ -714,30 +722,32 @@ mod:hook(StateInGameRunning, "_setup_end_of_level_UI ", function(self)
 		self._weave_personal_best_achieved = nil
 		self._completed_weave = nil
 
-		--[[if not self._booted_eac_untrusted then
-			local level, start_experience, start_experience_pool = self.rewards:get_level_start()
-			local versus_level, versus_start_experience = self.rewards:get_versus_level_start()
-			local win_track_start_experience = self.rewards:get_win_track_experience_start()
-			local rewards, end_of_level_rewards_arguments = self.rewards:get_rewards()
-			local win_conditions = mechanism_name == "versus" and Managers.mechanism:game_mechanism():win_conditions()
+		--if not self._booted_eac_untrusted then
+		local level, start_experience, start_experience_pool = self.rewards:get_level_start()
+		local versus_level, versus_start_experience = self.rewards:get_versus_level_start()
+		local win_track_start_experience = self.rewards:get_win_track_experience_start()
+		local rewards, end_of_level_rewards_arguments = self.rewards:get_rewards()
+		local win_conditions = mechanism_name == "versus" and Managers.mechanism:game_mechanism():win_conditions()
 
-			level_end_view_context.rewards = {
-				end_of_level_rewards = rewards and table.clone(rewards) or {},
-				level_start = {
-					level,
-					start_experience,
-					start_experience_pool
-				},
-				versus_level_start = {
-					versus_level,
-					versus_start_experience
-				},
-				mission_results = table.clone(self.rewards:get_mission_results()),
-				win_track_start_experience = win_track_start_experience,
-				team_scores = win_conditions and win_conditions:get_total_scores()
-			}
-			level_end_view_context.end_of_level_rewards_arguments = end_of_level_rewards_arguments and table.clone(end_of_level_rewards_arguments) or {}
-		end]]
+		mod:echo("Getting level rewards.")
+
+		level_end_view_context.rewards = {
+			end_of_level_rewards = rewards and table.clone(rewards) or {},
+			level_start = {
+				level,
+				start_experience,
+				start_experience_pool,
+			},
+			versus_level_start = {
+				versus_level,
+				versus_start_experience,
+			},
+			mission_results = table.clone(self.rewards:get_mission_results()),
+			win_track_start_experience = win_track_start_experience,
+			team_scores = win_conditions and win_conditions:get_total_scores(),
+		}
+		level_end_view_context.end_of_level_rewards_arguments = end_of_level_rewards_arguments and table.clone(end_of_level_rewards_arguments) or {}
+		--end
 
 		level_end_view_context.level_end_view = Managers.mechanism:get_level_end_view()
 		self.parent.parent.loading_context.level_end_view_context = level_end_view_context
@@ -752,8 +762,7 @@ mod:hook(StateInGameRunning, "_setup_end_of_level_UI ", function(self)
 	end
 
 	self.has_setup_end_of_level = true
-
-end)
+end
 --[[
 mod:hook(EndViewStateScoreVS, "create_ui_elements", function (self, params)
 
@@ -768,8 +777,6 @@ mod:hook(LevelEndViewVersus, "setup_pages", function (self, game_won, rewards)
 	local index_by_state_name = LevelEndViewVersus:_setup_pages_untrusted()
 	return index_by_state_name
 end)]]
-
-
 
 
 mod.on_game_state_changed = function(status, state_name)
