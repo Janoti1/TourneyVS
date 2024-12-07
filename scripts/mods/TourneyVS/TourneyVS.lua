@@ -279,11 +279,14 @@ mod.do_pause = function()
 		mod:echo(mod:localize("game_paused"))
 	end
 end
-mod:command("pause", mod:localize("pause_command_description"), function() mod.do_pause() end)
+-- dont add the pause command if the player is running hacks already
+if not get_mod("Helpers 2") then
+	mod:command("pause", mod:localize("pause_command_description"), function() mod.do_pause() end)
+end
 
 -- Suicide
 -- Cooldown?
-mod:command("die", mod:localize("die_command_description"), function()
+mod:command("die_die", mod:localize("die_command_description"), function()
 	-- check if you are in the keep
 	if DamageUtils.is_in_inn then
 		mod:echo(mod:localize("die_cant_die"))
@@ -316,13 +319,13 @@ GameModeSettings.versus.character_picking_settings = {
     startup_time = 3,
 }
 -- start game duration lowered
-GameModeSettings.versus.pre_start_round_duration = 15
-GameModeSettings.versus.initial_set_pre_start_duration = 20
+GameModeSettings.versus.pre_start_round_duration = 30 --15
+GameModeSettings.versus.initial_set_pre_start_duration = 45 --20
 
 -- Auto Screenshot on end of game
 --[[mod:command("screenshot", "screenshot_test", function()
 	Application.save_render_target("back_buffer", "C:/Users")
-end)]]
+end)
 mod:command("screenshot", "screenshot_test", function()
 	local key = "key" --self._current_item_key:gsub("/", "-")
 	local user_dir = os.getenv("USERPROFILE")
@@ -331,7 +334,7 @@ mod:command("screenshot", "screenshot_test", function()
 	--local path = "D:\\Users\\janot\\Desktop\\images\\screenshot.dds"
 	mod:echo("path: " .. path)
 	Application.save_render_target("ssao_buffer", "path.dds") --back_buffer, linear_depth, 
-end)
+end)]]
 
 
 --[[
@@ -377,6 +380,11 @@ mod.remove_loot_rats = function()
     else
         Breeds.skaven_loot_rat = mod.loot_rats_backup
     end
+end
+mod.on_game_state_changed = function(status, state_name)
+	if status == "enter" and state_name == "StateIngame" then
+        mod.remove_loot_rats()
+	end
 end
 
 -- Horde timers lowered
@@ -669,7 +677,11 @@ DamageProfileTemplates.victor_priest_nuke_dot_vs.armor_modifier.attack[3] = 1.0
 ╚═╝░░░░░╚═╝╚═╝░░╚═╝╚══════╝╚═════╝░
 ]]
 -- Crash on Game ending
--- attempt of fixing it without a FS hotfix by Aledend
+mod:hook_safe(StateInGameRunning, "_setup_end_of_level_UI", function(self, ...)
+	mod:chat_broadcast(mod:localize("crash_crash"))
+end)
+
+--[[
 StateInGameRunning._setup_end_of_level_UI = function (self)
 	if script_data.disable_end_screens then
 		Managers.state.network.network_transmit:send_rpc_server("rpc_is_ready_for_transition")
@@ -728,8 +740,9 @@ StateInGameRunning._setup_end_of_level_UI = function (self)
 		local win_track_start_experience = self.rewards:get_win_track_experience_start()
 		local rewards, end_of_level_rewards_arguments = self.rewards:get_rewards()
 		local win_conditions = mechanism_name == "versus" and Managers.mechanism:game_mechanism():win_conditions()
+		local mission_results = {} --self.rewards:get_mission_results()
 
-		mod:echo("Getting level rewards.")
+		--mod:dump(mission_results, "MISSION RESULLLLTTSSS", 5)
 
 		level_end_view_context.rewards = {
 			end_of_level_rewards = rewards and table.clone(rewards) or {},
@@ -742,11 +755,13 @@ StateInGameRunning._setup_end_of_level_UI = function (self)
 				versus_level,
 				versus_start_experience,
 			},
-			mission_results = table.clone(self.rewards:get_mission_results()),
+			mission_results = mission_results or {},
 			win_track_start_experience = win_track_start_experience,
-			team_scores = win_conditions and win_conditions:get_total_scores(),
+			team_scores = win_conditions and win_conditions:get_total_scores() or {},
 		}
+
 		level_end_view_context.end_of_level_rewards_arguments = end_of_level_rewards_arguments and table.clone(end_of_level_rewards_arguments) or {}
+		
 		--end
 
 		level_end_view_context.level_end_view = Managers.mechanism:get_level_end_view()
@@ -763,6 +778,11 @@ StateInGameRunning._setup_end_of_level_UI = function (self)
 
 	self.has_setup_end_of_level = true
 end
+EndViewStateScoreVSTabReport.EndViewStateScoreVSTabReport = function()
+	mod:chat_broadcast(mod:localize("crash_crash"))
+	mod:chat_broadcast(mod:localize("force_pause"))
+	Managers.state.debug:set_time_scale(1)
+end]]
 --[[
 mod:hook(EndViewStateScoreVS, "create_ui_elements", function (self, params)
 
@@ -777,15 +797,6 @@ mod:hook(LevelEndViewVersus, "setup_pages", function (self, game_won, rewards)
 	local index_by_state_name = LevelEndViewVersus:_setup_pages_untrusted()
 	return index_by_state_name
 end)]]
-
-
-mod.on_game_state_changed = function(status, state_name)
-	if status == "enter" and state_name == "StateIngame" then
-        mod.remove_loot_rats()
-	end
-end
-
-
 
 
 

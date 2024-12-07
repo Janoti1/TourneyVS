@@ -40,4 +40,10 @@ return {
 	die_die = {
 		en = "[Tourney Versus] die-die yes-yes."
 	},
+	crash_crash = {
+		en = "[TourneyVS] Die-Die, Crash-Crash, Spill-Spill"
+	},
+	force_pause = {
+		en = "[TourneyVS] Game paused for Screenshot, close the game manually or crash in a bit."
+	},
 }
